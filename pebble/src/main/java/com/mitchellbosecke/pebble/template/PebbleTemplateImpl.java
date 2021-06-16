@@ -12,12 +12,18 @@ import com.mitchellbosecke.pebble.PebbleEngine;
 import com.mitchellbosecke.pebble.error.PebbleException;
 import com.mitchellbosecke.pebble.extension.escaper.SafeString;
 import com.mitchellbosecke.pebble.node.ArgumentsNode;
+import com.mitchellbosecke.pebble.node.BlockNode;
+import com.mitchellbosecke.pebble.node.BodyNode;
+import com.mitchellbosecke.pebble.node.RenderableNode;
 import com.mitchellbosecke.pebble.node.RootNode;
 import com.mitchellbosecke.pebble.utils.FutureWriter;
+import com.mitchellbosecke.pebble.utils.LimitedSizeWriter;
 import com.mitchellbosecke.pebble.utils.Pair;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,7 +57,7 @@ public class PebbleTemplateImpl implements PebbleTemplate {
   /**
    * The root node of the AST to be rendered.
    */
-  private final RootNode rootNode;
+  private final RenderableNode rootNode;
 
   /**
    * Name of template. Used to help with debugging.
@@ -65,7 +71,7 @@ public class PebbleTemplateImpl implements PebbleTemplate {
    * @param root The root not to evaluate
    * @param name The name of the template
    */
-  public PebbleTemplateImpl(PebbleEngine engine, RootNode root, String name) {
+  public PebbleTemplateImpl(PebbleEngine engine, RenderableNode root, String name) {
     this.engine = engine;
     this.rootNode = root;
     this.name = name;
@@ -84,12 +90,18 @@ public class PebbleTemplateImpl implements PebbleTemplate {
   public void evaluate(Writer writer, Map<String, Object> map) throws IOException {
     EvaluationContextImpl context = this.initContext(null);
     context.getScopeChain().pushScope(map);
+
+    // Issue #449: if the provided map is immutable, this allows us to still set variables in the template context
+    context.getScopeChain().pushScope(new HashMap<>());
     this.evaluate(writer, context);
   }
 
   public void evaluate(Writer writer, Map<String, Object> map, Locale locale) throws IOException {
     EvaluationContextImpl context = this.initContext(locale);
     context.getScopeChain().pushScope(map);
+
+    // Issue #449: if the provided map is immutable, this allows us to still set variables in the template context
+    context.getScopeChain().pushScope(new HashMap<>());
     this.evaluate(writer, context);
   }
 
@@ -141,6 +153,7 @@ public class PebbleTemplateImpl implements PebbleTemplate {
     if (context.getExecutorService() != null) {
       writer = new FutureWriter(writer);
     }
+    writer = LimitedSizeWriter.from(writer, context);
     this.rootNode.render(this, writer, context);
 
     /*
@@ -178,10 +191,23 @@ public class PebbleTemplateImpl implements PebbleTemplate {
     // global vars provided from extensions
     scopeChain.pushScope(this.engine.getExtensionRegistry().getGlobalVariables());
 
-    return new EvaluationContextImpl(this, this.engine.isStrictVariables(), locale,
+    return new EvaluationContextImpl(this, this.engine.isStrictVariables(), locale, this.engine.getMaxRenderedSize(),
         this.engine.getExtensionRegistry(), this.engine.getTagCache(),
         this.engine.getExecutorService(),
         new ArrayList<>(), new HashMap<>(), scopeChain, null, this.engine.getEvaluationOptions());
+  }
+
+  /**
+   * Return a shallow copy of this template.
+   *
+   * @return A new template instance with the same data
+   */
+  private PebbleTemplateImpl shallowCopy() {
+    PebbleTemplateImpl copy = new PebbleTemplateImpl(engine, rootNode, name);
+    copy.blocks.putAll(this.blocks);
+    copy.macros.putAll(this.macros);
+
+    return copy;
   }
 
   /**
@@ -218,6 +244,12 @@ public class PebbleTemplateImpl implements PebbleTemplate {
         .getTemplate(this.resolveRelativePath(name));
     for (Pair<String, String> pair : namedMacros) {
       Macro m = templateImpl.macros.get(pair.getRight());
+
+      if (m == null) {
+        throw new PebbleException(null, "Function or Macro [" + pair.getRight() + "] referenced by alias ["
+                + pair.getLeft() + "] does not exist.");
+      }
+
       this.registerMacro(pair.getLeft(), m);
     }
   }
@@ -254,6 +286,68 @@ public class PebbleTemplateImpl implements PebbleTemplate {
     }
     template.evaluate(writer, newContext);
     scopeChain.popScope();
+  }
+
+  /**
+   * Embed a template with {@code name} into this template and override its child blocks. This has the effect of
+   * essentially "including" a template (as with the `include` tag), but its blocks may be overridden in the calling
+   * template similar to extending a template.
+   *
+   * @param lineNo the line number of the node being evaluated
+   * @param writer the writer to which the output should be written to.
+   * @param context the context within which the template is rendered in.
+   * @param name the name of the template to include.
+   * @param additionalVariables the map with additional variables provided with the include tag to
+   * add within the embed tag.
+   * @param overriddenBlocks the blocks parsed out of the parent template that should override blocks in the embedded template
+   * @throws IOException Any error during the loading of the template
+   */
+  public void embedTemplate(
+          int lineNo,
+          Writer writer,
+          EvaluationContextImpl context,
+          String name,
+          Map<?, ?> additionalVariables,
+          List<BlockNode> overriddenBlocks
+  ) throws IOException {
+    // get the template to embed
+    String embeddedTemplateName = this.resolveRelativePath(name);
+
+    // make a shallow copy of the template so we can safely modify its blocks without affecting other templates in the
+    // template cache. Include and extend will use the same object from the cache, so we need to make sure embeds do not
+    // impact those other tags or change anything in the cache.
+    final PebbleTemplateImpl embeddedTemplate =
+            ((PebbleTemplateImpl) this.engine.getTemplate(embeddedTemplateName)).shallowCopy();
+
+    // push a child scope based on the current scope
+    context.scopedShallowWithoutInheritanceChain(embeddedTemplate, additionalVariables, (newContext) -> {
+
+      // create a fake root template to act as the parent of the embedded template. That root node simply renders the
+      // embedded template's own RootNode, but now we're able to isolate its template hierarchy and provide new blocks
+      // into that hierarchy
+      BodyNode embeddedTemplateBody = ((RootNode) embeddedTemplate.rootNode).getBody();
+      BodyNode bodyNode = new BodyNode(lineNo, Collections.singletonList(embeddedTemplateBody));
+      PebbleTemplateImpl fakeRootTemplate = new PebbleTemplateImpl(engine, bodyNode, embeddedTemplateName);
+
+      // push the blocks from the embedded template into the fake root, to make sure they are able to rendered if they
+      // are not overridden
+      for(Block block : embeddedTemplate.blocks.values()) {
+        fakeRootTemplate.registerBlock(block);
+      }
+
+      // push the overridden blocks into the embedded template, since they were added to the host template rather than
+      // the embdedded template during parsing. Overridden blocks must be present in the embedded template.
+      for(BlockNode blockNode : overriddenBlocks) {
+        embeddedTemplate.registerBlock(blockNode.getBlock());
+      }
+
+      // push the new fake template root into the child context so blocks are resolved properly.
+      newContext.getHierarchy().pushAncestor(fakeRootTemplate);
+
+      // evaluate the embedded template. Its blocks will now override those defined in the fake root template using the
+      // same mechanism as for overriding blocks when extending a template
+      embeddedTemplate.evaluate(writer, newContext);
+    });
   }
 
   /**

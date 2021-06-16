@@ -8,9 +8,9 @@
  */
 package com.mitchellbosecke.pebble;
 
-import static org.hamcrest.core.StringStartsWith.startsWith;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.mitchellbosecke.pebble.error.ParserException;
 import com.mitchellbosecke.pebble.error.PebbleException;
@@ -21,17 +21,12 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
-public class ArraySyntaxTest {
-
-  @Rule
-  public final ExpectedException thrown = ExpectedException.none();
+class ArraySyntaxTest {
 
   @Test
-  public void testArraySyntax() throws PebbleException, IOException {
+  void testArraySyntax() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -44,7 +39,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSimpleArray() throws PebbleException, IOException {
+  void testSimpleArray() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -57,7 +52,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void test2ElementArray() throws PebbleException, IOException {
+  void test2ElementArray() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -70,7 +65,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void test2ElementArray2() throws PebbleException, IOException {
+  void test2ElementArray2() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -83,7 +78,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testNElementArray() throws PebbleException, IOException {
+  void testNElementArray() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -97,24 +92,26 @@ public class ArraySyntaxTest {
         writer.toString());
   }
 
+  /**
+   * The template engine should thrown an exception when processing
+   * a template that contains incomplete array syntax.
+   */
   @Test
-  public void testIncompleteArraySyntax() throws PebbleException {
-    //Arrange
+  void testIncompleteArraySyntax() throws PebbleException {
+    // given a Pebble Engine and template text that contains incomplete array syntax
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
-
     String source = "{{ [,] }}";
-
-    this.thrown.expect(ParserException.class);
-    this.thrown.expectMessage(startsWith("Unexpected token"));
-
-    //Act + Assert
-    pebble.getTemplate(source);
+    // A Parser Exception should be thrown with a message indicating that there was an unexpected token
+    assertThatExceptionOfType(ParserException.class).isThrownBy(() -> {
+          pebble.getTemplate(source);
+        }
+    ).withMessageStartingWith("Unexpected token");
   }
 
   @SuppressWarnings("serial")
   @Test
-  public void testArrayWithExpressions() throws PebbleException, IOException {
+  void testArrayWithExpressions() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -137,7 +134,7 @@ public class ArraySyntaxTest {
 
   @SuppressWarnings({"serial", "unused"})
   @Test
-  public void testArrayWithComplexExpressions() throws PebbleException, IOException {
+  void testArrayWithComplexExpressions() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -147,7 +144,7 @@ public class ArraySyntaxTest {
     Map<String, Object> context = new HashMap<>();
     context.put("three", new Object() {
 
-      public Integer number = 3;
+      public final Integer number = 3;
     });
     context.put("numbers", new HashMap<String, Object>() {
 
@@ -155,7 +152,7 @@ public class ArraySyntaxTest {
         this.put("four", new String[]{"4"});
         this.put("five", new Object() {
 
-          private String value = "five";
+          private final String value = "five";
 
           public String getValue() {
             return this.value;
@@ -170,7 +167,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSetCommand() throws PebbleException, IOException {
+  void testSetCommand() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -183,7 +180,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSetCommand2() throws PebbleException, IOException {
+  void testSetCommand2() throws PebbleException, IOException {
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
 
@@ -196,7 +193,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testFirstFilter() throws PebbleException, IOException {
+  void testFirstFilter() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -210,7 +207,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testFirstFilter2() throws PebbleException, IOException {
+  void testFirstFilter2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -224,7 +221,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testJoinFilter() throws PebbleException, IOException {
+  void testJoinFilter() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -238,7 +235,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testJoinFilter2() throws PebbleException, IOException {
+  void testJoinFilter2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -252,7 +249,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testLastFilter() throws PebbleException, IOException {
+  void testLastFilter() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -266,7 +263,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testLastFilter2() throws PebbleException, IOException {
+  void testLastFilter2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -280,7 +277,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSliceFilter() throws PebbleException, IOException {
+  void testSliceFilter() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -294,7 +291,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSliceFilter2() throws PebbleException, IOException {
+  void testSliceFilter2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -308,7 +305,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSortFilter() throws PebbleException, IOException {
+  void testSortFilter() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -322,7 +319,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSortFilter2() throws PebbleException, IOException {
+  void testSortFilter2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -336,7 +333,21 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testForTag() throws PebbleException, IOException {
+  void testSortFilterFromArray() throws PebbleException, IOException {
+
+    PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
+        .strictVariables(false).build();
+
+    String source = "{{ 'q,g,s,c,w' | split(',') | sort }}";
+    PebbleTemplate template = pebble.getTemplate(source);
+
+    Writer writer = new StringWriter();
+    template.evaluate(writer, new HashMap<>());
+    assertEquals("[c, g, q, s, w]", writer.toString());
+  }
+
+  @Test
+  void testForTag() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -350,7 +361,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testForTag2() throws PebbleException, IOException {
+  void testForTag2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -364,7 +375,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testForTagInvalidIterable() throws PebbleException, IOException {
+  void testForTagInvalidIterable() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -382,7 +393,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testForElseTag() throws PebbleException, IOException {
+  void testForElseTag() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -396,7 +407,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testIfTag() throws PebbleException, IOException {
+  void testIfTag() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -410,7 +421,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testIfTag2() throws PebbleException, IOException {
+  void testIfTag2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -424,7 +435,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testMacroTag() throws PebbleException, IOException {
+  void testMacroTag() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -438,7 +449,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testMacroTagNamedArguments() throws PebbleException, IOException {
+  void testMacroTagNamedArguments() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -452,7 +463,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testAdditionOverloading() throws PebbleException, IOException {
+  void testAdditionOverloading() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -466,7 +477,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testAdditionOverloading2() throws PebbleException, IOException {
+  void testAdditionOverloading2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -480,7 +491,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testAdditionOverloading3() throws PebbleException, IOException {
+  void testAdditionOverloading3() throws PebbleException, IOException {
     //Arrange
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -490,15 +501,16 @@ public class ArraySyntaxTest {
 
     Writer writer = new StringWriter();
 
-    this.thrown.expect(PebbleException.class);
-    this.thrown.expectMessage(startsWith("Could not perform addition"));
-
     //Act + Assert
-    template.evaluate(writer, new HashMap<>());
+    // A Pebble Exception should be thrown with a message indicating that the addition operation failed
+    assertThatExceptionOfType(PebbleException.class).isThrownBy(() -> { 
+        template.evaluate(writer, new HashMap<>()); 
+      }
+    ).withMessageStartingWith("Could not perform addition");
   }
 
   @Test
-  public void testSubtractionOverloading() throws PebbleException, IOException {
+  void testSubtractionOverloading() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -512,7 +524,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSubtractionOverloading2() throws PebbleException, IOException {
+  void testSubtractionOverloading2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -526,7 +538,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testSubtractionOverloading3() throws PebbleException, IOException {
+  void testSubtractionOverloading3() throws PebbleException, IOException {
     //Arrange
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -536,15 +548,16 @@ public class ArraySyntaxTest {
 
     Writer writer = new StringWriter();
 
-    this.thrown.expect(PebbleException.class);
-    this.thrown.expectMessage(startsWith("Could not perform subtraction"));
-
     //Act + Assert
-    template.evaluate(writer, new HashMap<>());
+    // A Pebble Exception should be thrown with a message indicating that subtraction failed
+    assertThatExceptionOfType(PebbleException.class).isThrownBy(() -> {
+        template.evaluate(writer, new HashMap<>()); 
+      }
+    ).withMessageStartingWith("Could not perform subtraction");
   }
 
   @Test
-  public void testEmptyTest() throws PebbleException, IOException {
+  void testEmptyTest() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -558,7 +571,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testEmptyTest2() throws PebbleException, IOException {
+  void testEmptyTest2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -572,7 +585,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testEmptyTest3() throws PebbleException, IOException {
+  void testEmptyTest3() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -586,7 +599,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testIterableTest() throws PebbleException, IOException {
+  void testIterableTest() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -600,7 +613,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testIterableTest2() throws PebbleException, IOException {
+  void testIterableTest2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -614,7 +627,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testContainsOperator() throws PebbleException, IOException {
+  void testContainsOperator() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -628,7 +641,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testContainsOperator2() throws PebbleException, IOException {
+  void testContainsOperator2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -642,7 +655,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testContainsOperator3() throws PebbleException, IOException {
+  void testContainsOperator3() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -656,7 +669,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testContainsOperator4() throws PebbleException, IOException {
+  void testContainsOperator4() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -670,7 +683,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testContainsOperator5() throws PebbleException, IOException {
+  void testContainsOperator5() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -684,7 +697,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testNestedArrays() throws PebbleException, IOException {
+  void testNestedArrays() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -698,7 +711,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testNestedArrays2() throws PebbleException, IOException {
+  void testNestedArrays2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -712,7 +725,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testNestedArrays3() throws PebbleException, IOException {
+  void testNestedArrays3() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -726,7 +739,7 @@ public class ArraySyntaxTest {
   }
 
   @Test
-  public void testNestedMapInArray() throws PebbleException, IOException {
+  void testNestedMapInArray() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -743,7 +756,7 @@ public class ArraySyntaxTest {
 
   @SuppressWarnings("serial")
   @Test
-  public void testProblematicSubscriptSyntax() throws PebbleException, IOException {
+  void testProblematicSubscriptSyntax() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -766,7 +779,7 @@ public class ArraySyntaxTest {
 
   @SuppressWarnings("serial")
   @Test
-  public void testProblematicSubscriptSyntax2() throws PebbleException, IOException {
+  void testProblematicSubscriptSyntax2() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -789,7 +802,7 @@ public class ArraySyntaxTest {
 
   @SuppressWarnings({"serial", "unused"})
   @Test
-  public void testProblematicSubscriptSyntax3() throws PebbleException, IOException {
+  void testProblematicSubscriptSyntax3() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -803,7 +816,7 @@ public class ArraySyntaxTest {
       {
         this.put("first-name", new Object() {
 
-          private String name = "Bob";
+          private final String name = "Bob";
 
           public String getName() {
             return this.name;
@@ -819,7 +832,7 @@ public class ArraySyntaxTest {
 
   @SuppressWarnings("serial")
   @Test
-  public void testProblematicSubscriptSyntax4() throws PebbleException, IOException {
+  void testProblematicSubscriptSyntax4() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();
@@ -842,7 +855,7 @@ public class ArraySyntaxTest {
 
   @SuppressWarnings("serial")
   @Test
-  public void testProblematicSubscriptSyntax5() throws PebbleException, IOException {
+  void testProblematicSubscriptSyntax5() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .strictVariables(false).build();

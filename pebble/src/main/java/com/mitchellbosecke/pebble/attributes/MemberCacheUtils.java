@@ -8,11 +8,13 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 class MemberCacheUtils {
-
   private final ConcurrentHashMap<MemberCacheKey, Member> memberCache = new ConcurrentHashMap<>(100,
       0.9f, 1);
 
@@ -26,10 +28,11 @@ class MemberCacheUtils {
       EvaluationContextImpl context,
       String filename,
       int lineNumber) {
-    Member member = this.reflect(instance, attributeName, argumentTypes, filename, lineNumber,
-        context.getEvaluationOptions());
+    Member member = this.reflect(instance, attributeName, argumentTypes,
+        filename, lineNumber, context.getEvaluationOptions());
     if (member != null) {
-      this.memberCache.put(new MemberCacheKey(instance.getClass(), attributeName, argumentTypes), member);
+      this.memberCache
+          .put(new MemberCacheKey(instance.getClass(), attributeName, argumentTypes), member);
     }
     return member;
   }
@@ -46,56 +49,69 @@ class MemberCacheUtils {
     String attributeCapitalized =
         Character.toUpperCase(attributeName.charAt(0)) + attributeName.substring(1);
 
-    // check get method
-    Member result = this
-        .findMethod(clazz, "get" + attributeCapitalized, parameterTypes, filename, lineNumber,
+    // search well known super classes first to avoid illegal reflective access
+    List<Class<?>> agenda = Arrays.asList(
+        List.class,
+        Set.class,
+        Map.class,
+        Map.Entry.class,
+        Collection.class,
+        Iterable.class,
+        clazz);
+    
+    for (Class<?> type : agenda) {
+      if (!type.isAssignableFrom(clazz)) {
+        continue;
+      }
+      
+      // check get method
+      Member result = this
+          .findMethod(object, type, "get" + attributeCapitalized, parameterTypes, filename,
+              lineNumber, evaluationOptions);
+
+      // check is method
+      if (result == null) {
+        result = this
+            .findMethod(object, type, "is" + attributeCapitalized, parameterTypes, filename,
+                lineNumber, evaluationOptions);
+      }
+
+      // check has method
+      if (result == null) {
+        result = this
+            .findMethod(object, type, "has" + attributeCapitalized, parameterTypes, filename,
+                lineNumber,
+                evaluationOptions);
+      }
+
+      // check if attribute is a public method
+      if (result == null) {
+        result = this.findMethod(object, type, attributeName, parameterTypes, filename, lineNumber,
             evaluationOptions);
+      }
 
-    // check is method
-    if (result == null) {
-      result = this
-          .findMethod(clazz, "is" + attributeCapitalized, parameterTypes, filename, lineNumber,
-              evaluationOptions);
-    }
-
-    // check has method
-    if (result == null) {
-      result = this
-          .findMethod(clazz, "has" + attributeCapitalized, parameterTypes, filename, lineNumber,
-              evaluationOptions);
-    }
-
-    // check if attribute is a public method
-    if (result == null) {
-      result = this.findMethod(clazz, attributeName, parameterTypes, filename, lineNumber,
-          evaluationOptions);
-    }
-
-    // public field
-    if (result == null) {
-      try {
-        result = clazz.getField(attributeName);
-      } catch (NoSuchFieldException | SecurityException e) {
+      // public field
+      if (result == null) {
+        try {
+          result = type.getField(attributeName);
+        } catch (NoSuchFieldException | SecurityException e) {
+        }
+      }
+      
+      if (result != null) {
+        ((AccessibleObject) result).setAccessible(true);
+        return result;
       }
     }
-
-    if (result != null) {
-      ((AccessibleObject) result).setAccessible(true);
-    }
-
-    return result;
+    return null;
   }
 
   /**
    * Finds an appropriate method by comparing if parameter types are compatible. This is more
    * relaxed than class.getMethod.
    */
-  private Method findMethod(Class<?> clazz, String name, Class<?>[] requiredTypes, String filename,
-      int lineNumber, EvaluationOptions evaluationOptions) {
-    if (!evaluationOptions.isAllowGetClass() && name.equals("getClass")) {
-      throw new ClassAccessException(lineNumber, filename);
-    }
-
+  private Method findMethod(Object object, Class<?> clazz, String name, Class<?>[] requiredTypes,
+      String filename, int lineNumber, EvaluationOptions evaluationOptions) {
     List<Method> candidates = this.getCandidates(clazz, name, requiredTypes);
 
     // perfect match
@@ -130,6 +146,7 @@ class MemberCacheUtils {
       }
     }
     if(bestMatch != null) {
+      this.verifyUnsafeMethod(filename, lineNumber, evaluationOptions, object, bestMatch);
       return bestMatch;
     }
 
@@ -146,6 +163,7 @@ class MemberCacheUtils {
         }
 
         if (compatibleTypes) {
+          this.verifyUnsafeMethod(filename, lineNumber, evaluationOptions, object, candidate);
           return candidate;
         }
       }
@@ -153,6 +171,16 @@ class MemberCacheUtils {
 
     return null;
   }
+
+  private void verifyUnsafeMethod(String filename, int lineNumber,
+      EvaluationOptions evaluationOptions, Object object, Method method) {
+    boolean methodAccessAllowed = evaluationOptions.getMethodAccessValidator()
+        .isMethodAccessAllowed(object, method);
+    if (!methodAccessAllowed) {
+      throw new ClassAccessException(method, filename, lineNumber);
+    }
+  }
+
 
   /**
    * Performs a widening conversion (primitive to boxed type)

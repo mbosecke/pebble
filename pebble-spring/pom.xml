@@ -4,28 +4,22 @@
   <parent>
     <groupId>io.pebbletemplates</groupId>
     <artifactId>pebble-project</artifactId>
-    <version>3.0.7-SNAPSHOT</version>  
+    <version>3.1.6-SNAPSHOT</version>
   </parent>
 
   <artifactId>pebble-spring</artifactId>
   <packaging>pom</packaging>
 
   <modules>
-    <module>pebble-spring3</module>
     <module>pebble-spring4</module>
     <module>pebble-spring5</module>
+    <module>pebble-legacy-spring-boot-starter</module>
     <module>pebble-spring-boot-starter</module>
-    <module>pebble-spring-boot-2-starter</module>
   </modules>
 
   <name>Pebble Spring Project</name>
   <description>Pebble Spring Project</description>
   <url>http://pebbletemplates.io</url>
-
-  <properties>
-    <junit.version>4.12</junit.version>
-    <mockito.version>2.3.5</mockito.version>
-  </properties>
 
   <dependencyManagement>
     <dependencies>
@@ -33,18 +27,6 @@
         <groupId>io.pebbletemplates</groupId>
         <artifactId>pebble</artifactId>
         <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>${mockito.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>${junit.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

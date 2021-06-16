@@ -8,85 +8,75 @@
  */
 package com.mitchellbosecke.pebble;
 
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.beans.HasPropertyWithValue.hasProperty;
-import static org.hamcrest.core.AllOf.allOf;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.StringEndsWith.endsWith;
-
 import com.mitchellbosecke.pebble.error.ParserException;
 import com.mitchellbosecke.pebble.error.PebbleException;
 import com.mitchellbosecke.pebble.error.RootAttributeNotFoundException;
 import com.mitchellbosecke.pebble.loader.StringLoader;
 import com.mitchellbosecke.pebble.template.PebbleTemplate;
+
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.io.StringWriter;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
-public class ErrorReportingTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-  @Rule
-  public final ExpectedException thrown = ExpectedException.none();
+class ErrorReportingTest {
+
 
   @Test
-  public void testLineNumberErrorReportingWithUnixNewlines() throws PebbleException {
-    //Arrange
-    PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
-        .strictVariables(false).build();
+  void testLineNumberErrorReportingWithUnixNewlines() throws PebbleException {
+    ParserException parserException = assertThrows(ParserException.class, () -> {
+      //Arrange
+      PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
+          .strictVariables(false).build();
+      pebble.getTemplate("test\n\n\ntest\ntest\ntest\n{% error %}\ntest");
+    });
 
-    this.thrown.expect(ParserException.class);
-    this.thrown.expectMessage(endsWith(":7)"));
-
-    //Act + Assert
-    pebble.getTemplate("test\n\n\ntest\ntest\ntest\n{% error %}\ntest");
+    assertThat(parserException.getMessage()).endsWith(":7)");
   }
 
   @Test
-  public void testLineNumberErrorReportingWithWindowsNewlines() throws PebbleException {
-    //Arrange
-    PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
-        .strictVariables(false).build();
+  void testLineNumberErrorReportingWithWindowsNewlines() throws PebbleException {
+    ParserException parserException = assertThrows(ParserException.class, () -> {
+      PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
+          .strictVariables(false).build();
+      pebble.getTemplate("test\r\n\r\ntest\r\ntest\r\ntest\r\n{% error %}\r\ntest");
+    });
 
-    this.thrown.expect(ParserException.class);
-    this.thrown.expectMessage(endsWith(":6)"));
-
-    //Act + Assert
-    pebble.getTemplate("test\r\n\r\ntest\r\ntest\r\ntest\r\n{% error %}\r\ntest");
+    assertThat(parserException.getMessage()).endsWith(":6)");
   }
 
   @Test
-  public void testLineNumberErrorReportingDuringEvaluation() throws PebbleException, IOException {
-    //Arrange
-    PebbleEngine pebble = new PebbleEngine.Builder().strictVariables(false).build();
+  void testLineNumberErrorReportingDuringEvaluation() throws PebbleException, IOException {
+    PebbleException pebbleException = assertThrows(PebbleException.class, () -> {
+      PebbleEngine pebble = new PebbleEngine.Builder().strictVariables(false).build();
+      PebbleTemplate template = pebble.getTemplate("templates/template.errorReporting.peb");
+      template.evaluate(new StringWriter());
+    });
 
-    PebbleTemplate template = pebble.getTemplate("templates/template.errorReporting.peb");
-
-    this.thrown.expect(PebbleException.class);
-    this.thrown.expectMessage(endsWith(":8)"));
-
-    //Act + Assert
-    template.evaluate(new StringWriter());
+    assertThat(pebbleException.getMessage()).endsWith(":8)");
   }
 
+  /**
+   * An error should occur when a Pebble Template Engine instance is configured with
+   * Strict Variables set to true and a template is executed that contains a references
+   * to an undefined property.
+   */
   @Test
-  public void testMissingRootPropertyInStrictMode() throws PebbleException, IOException {
-    //Arrange
-    PebbleEngine pebble = new PebbleEngine.Builder().strictVariables(true).build();
-    PebbleTemplate template = pebble
-        .getTemplate("templates/template.errorReportingMissingRootProperty.peb");
+  void testInvalidPropertyReferenceInStrictMode() throws PebbleException, IOException {
+    RootAttributeNotFoundException rootAttributeNotFoundException = assertThrows(RootAttributeNotFoundException.class, () -> {
+      PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
+          .strictVariables(true)
+          .build();
 
-    this.thrown.expect(allOf(
-        instanceOf(RootAttributeNotFoundException.class),
-        hasProperty("attributeName", is("root"))
-        )
-    );
-    this.thrown.expectMessage(
-        "Root attribute [root] does not exist or can not be accessed and strict variables is set to true. (templates/template.errorReportingMissingRootProperty.peb:2)");
+      PebbleTemplate template = pebble.getTemplate("{{ root }}");
+      template.evaluate(new StringWriter());
+    });
 
-    //Act
-    template.evaluate(new StringWriter());
+    assertThat(rootAttributeNotFoundException.getAttributeName()).isEqualTo("root");
+    assertThat(rootAttributeNotFoundException.getMessage()).contains("Root attribute [root] does not exist or can not be accessed");
   }
 
 }

@@ -1,8 +1,16 @@
-# Pebble ![Continuous Integration](https://api.travis-ci.org/PebbleTemplates/pebble.svg?branch=master)
+# Pebble ![Continuous Integration](https://api.travis-ci.com/PebbleTemplates/pebble.svg?branch=master)
 
 Pebble is a java templating engine inspired by [Twig](http://twig.sensiolabs.org/). It separates itself from the crowd with its inheritance feature and its easy-to-read syntax. It ships with built-in autoescaping for security, and it includes integrated support for internationalization.
 
 For more information please visit the [website](https://pebbletemplates.io).
+
+# Artifact id renaming for pebble-spring-boot-starter 
+As of version 3.1.0 and in order to follow this naming [recommendation](https://github.com/spring-projects/spring-boot/wiki/Building-On-Spring-Boot#naming), the artifactId of pebble-spring-boot-starter has been renamed as is:
+
+| Old artifactId | New artifactId | spring-boot version |
+| --- | --- | --- |
+| pebble-spring-boot-starter | pebble-legacy-spring-boot-starter | 1.5.x |
+| pebble-spring-boot-2-starter | pebble-spring-boot-starter | 2.x.x |
 
 # New group id
 Please note that the pebble's groupId has been updated as of version 2.5.0
@@ -10,7 +18,7 @@ Please note that the pebble's groupId has been updated as of version 2.5.0
 <dependency>
 	<groupId>io.pebbletemplates</groupId>
 	<artifactId>pebble</artifactId>
-	<version>3.0.6</version>
+	<version>3.1.5</version>
 </dependency>
 ```
 

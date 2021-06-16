@@ -6,27 +6,16 @@
  */
 package com.mitchellbosecke.pebble.spring;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.mitchellbosecke.pebble.spring.config.MVCConfig;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -35,15 +24,28 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.ViewResolver;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  * Unit test for the PebbleViewResolver
  *
  * @author Eric Bussieres
  */
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = {MVCConfig.class})
-public class PebbleViewResolverTest {
+@ContextConfiguration(classes = MVCConfig.class)
+class PebbleViewResolverTest {
 
   private static final String CONTEXT_PATH = "/testContextPath";
   private static final Locale DEFAULT_LOCALE = Locale.CANADA;
@@ -57,16 +59,16 @@ public class PebbleViewResolverTest {
   @Autowired
   private ViewResolver viewResolver;
 
-  @Before
-  public void initRequest() {
+  @BeforeEach
+  void initRequest() {
     this.mockRequest.setContextPath(CONTEXT_PATH);
     this.mockRequest.getSession().setMaxInactiveInterval(600);
 
     RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(this.mockRequest));
   }
 
-  @Before
-  public void initBindingResult() {
+  @BeforeEach
+  void initBindingResult() {
     this.initBindingResultAllErrors();
     this.initBindingResultGlobalErrors();
     this.initBindingResultFieldErrors();
@@ -101,14 +103,14 @@ public class PebbleViewResolverTest {
   }
 
   @Test
-  public void whenRenderingAPage_givenPageWithBeanVariable_thenRenderingIsOK() throws Exception {
+  void whenRenderingAPage_givenPageWithBeanVariable_thenRenderingIsOK() throws Exception {
     String result = this.render("beansTest", new HashMap<String, Object>());
 
     this.assertOutput(result, EXPECTED_RESPONSE_PATH + "/beansTest.html");
   }
 
   @Test
-  public void whenRenderingAPage_givenPageWithBindingResult_thenRenderingIsOK() throws Exception {
+  void whenRenderingAPage_givenPageWithBindingResult_thenRenderingIsOK() throws Exception {
     Map<String, Object> model = this.givenBindingResult();
 
     String result = this.render("bindingResultTest", model);
@@ -123,14 +125,23 @@ public class PebbleViewResolverTest {
   }
 
   @Test
-  public void whenRenderingAPage_givenPageWithHrefFunction_thenRenderingIsOK() throws Exception {
+  void whenRenderingAPage_givenPageWithBindingResultAndMacro_thenRenderingIsOK() throws Exception {
+    Map<String, Object> model = this.givenBindingResult();
+
+    String result = this.render("bindingResultWithMacroTest", model);
+
+    this.assertOutput(result, EXPECTED_RESPONSE_PATH + "/bindingResultWithMacroTest.html");
+  }
+
+  @Test
+  void whenRenderingAPage_givenPageWithHrefFunction_thenRenderingIsOK() throws Exception {
     String result = this.render("hrefFunctionTest", new HashMap<String, Object>());
 
     this.assertOutput(result, EXPECTED_RESPONSE_PATH + "/hrefFunctionTest.html");
   }
 
   @Test
-  public void whenRenderingAPageInEnglish_givenPageWithResourceBundleMessage_thenRenderingIsOK()
+  void whenRenderingAPageInEnglish_givenPageWithResourceBundleMessage_thenRenderingIsOK()
       throws Exception {
     String result = this.render("messageEnTest", new HashMap<String, Object>());
 
@@ -138,7 +149,7 @@ public class PebbleViewResolverTest {
   }
 
   @Test
-  public void whenRenderingAPageInFrench_givenPageWithResourceBundleMessage_thenRenderingIsOK()
+  void whenRenderingAPageInFrench_givenPageWithResourceBundleMessage_thenRenderingIsOK()
       throws Exception {
     this.mockRequest.addPreferredLocale(Locale.CANADA_FRENCH);
 
@@ -148,7 +159,7 @@ public class PebbleViewResolverTest {
   }
 
   @Test
-  public void whenRenderingAPage_givenPageWithHttpRequestVariable_thenRenderingIsOK()
+  void whenRenderingAPage_givenPageWithHttpRequestVariable_thenRenderingIsOK()
       throws Exception {
     String result = this.render("requestTest", new HashMap<String, Object>());
 
@@ -156,7 +167,7 @@ public class PebbleViewResolverTest {
   }
 
   @Test
-  public void whenRenderingAPage_givenPageWithHttpResponseVariable_thenRenderingIsOK()
+  void whenRenderingAPage_givenPageWithHttpResponseVariable_thenRenderingIsOK()
       throws Exception {
     String result = this.render("responseTest", new HashMap<String, Object>());
 
@@ -164,7 +175,7 @@ public class PebbleViewResolverTest {
   }
 
   @Test
-  public void whenRenderingAPage_givenPageWithHttpSessionVariable_thenRenderingIsOK()
+  void whenRenderingAPage_givenPageWithHttpSessionVariable_thenRenderingIsOK()
       throws Exception {
     String result = this.render("sessionTest", new HashMap<String, Object>());
 

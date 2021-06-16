@@ -65,6 +65,7 @@ Pebble ships with the following loader implementations:
 - `FileLoader`:  Finds templates using a filesystem path.
 - `ServletLoader`:  Uses a servlet context to find the template. This is the recommended loader for use within an
 application server but is not enabled by default.
+- `Servlet5Loader`:  Same as `ServletLoader`, but for Jakarta Servlet 5.0 or newer.
 - `StringLoader`: Considers the name of the template to be the contents of the template.
 - `DelegatingLoader`: Delegates responsibility to a collection of children loaders.
 
@@ -84,6 +85,8 @@ All the settings are set during the construction of the `PebbleEngine` object.
 | `executorService` | An `ExecutorService` that allows the usage of some advanced multithreading features, such as the `parallel` tag. | `null` |
 | `loader` | An implementation of the `Loader` interface which is used to find templates. | An implementation of the `DelegatingLoader` which uses a `ClasspathLoader` and a `FileLoader` behind the scenes. |
 | `strictVariables` | If set to true, Pebble will throw an exception if you try to access a variable or attribute that does not exist (or an attribute of a null variable). If set to false, your template will treat non-existing variables/attributes as null without ever skipping a beat. | `false` |
-| `allowGetClass` | If set to false, Pebble will throw an exception if you try to access the class/getClass attribute. | `true` in 2.x, 'false' in v3.x |
-| `literalDecimalTreatedAsInteger` | option for toggling to enable/disable literal decimal treated as integer | `false` |
+| `methodAccessValidator` | Pebble provides two implementations. NoOpMethodAccessValidator which do nothing and BlacklistMethodAccessValidator which checks that the method being called is not blacklisted. | `BlacklistMethodAccessValidator` 
+| `literalDecimalTreatedAsInteger` | option for treating literal decimals as `int`. Otherwise it is `long`. | `false` |
+| `literalNumbersAsBigDecimals` | option for toggling to enable/disable literal numbers treated as BigDecimals | `false` |
 | `greedyMatchMethod` | option for toggling to enable/disable greedy matching mode for finding java method. Reduce the limit of the parameter type, try to find other method which has compatible parameter types. | `false` |
+| `maxRenderedSize` | option for limiting the size of the rendered output | `-1 (disabled)` |

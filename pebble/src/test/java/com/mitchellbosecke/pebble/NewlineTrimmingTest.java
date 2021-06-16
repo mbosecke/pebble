@@ -8,22 +8,24 @@
  */
 package com.mitchellbosecke.pebble;
 
-import static org.junit.Assert.assertEquals;
-
 import com.mitchellbosecke.pebble.error.PebbleException;
 import com.mitchellbosecke.pebble.loader.StringLoader;
 import com.mitchellbosecke.pebble.template.PebbleTemplate;
+
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Test;
 
-public class NewlineTrimmingTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class NewlineTrimmingTest {
 
   @Test
-  public void testPrintDefault() throws PebbleException, IOException {
+  void testPrintDefault() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .build();
@@ -42,7 +44,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testPrintForceToTrue() throws PebbleException, IOException {
+  void testPrintForceToTrue() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(true)
@@ -61,8 +63,13 @@ public class NewlineTrimmingTest {
     assertEquals("val1val2", writer.toString());
   }
 
+  /**
+   * Given that Newline Trimming is disabled,
+   * a template that contains one newline character with text on each line
+   * should output one newline character.
+   */
   @Test
-  public void testPrintSetToFalse() throws PebbleException, IOException {
+  void testNewLineIncludedWhen_NewLineTrimmingIsFalse() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(false)
@@ -82,7 +89,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testPrintDefaultTwoNewlines() throws PebbleException, IOException {
+  void testPrintDefaultTwoNewlines() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .build();
@@ -100,8 +107,13 @@ public class NewlineTrimmingTest {
     assertEquals("val1\nval2", writer.toString());
   }
 
+  /**
+   * Given that Newline Trimming is disabled,
+   * a template that contains one or more consecutive newline characters
+   * should output one newline character.
+   */
   @Test
-  public void testPrintSetToFalseTwoNewlines() throws PebbleException, IOException {
+  void testOneNewLineWhen_NewLineTrimmingFalseAndConsecutiveNewLinesInTemplate() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(false)
@@ -121,7 +133,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testCommentDefault() throws PebbleException, IOException {
+  void testCommentDefault() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .build();
@@ -136,7 +148,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testCommentForceToTrue() throws PebbleException, IOException {
+  void testCommentForceToTrue() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(true)
@@ -152,7 +164,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testCommentSetToFalse() throws PebbleException, IOException {
+  void testCommentSetToFalse() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(false)
@@ -168,7 +180,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testExecuteDefault() throws PebbleException, IOException {
+  void testExecuteDefault() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .build();
@@ -183,7 +195,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testExecuteForceToTrue() throws PebbleException, IOException {
+  void testExecuteForceToTrue() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(true)
@@ -199,7 +211,7 @@ public class NewlineTrimmingTest {
   }
 
   @Test
-  public void testExecuteSetToFalse() throws PebbleException, IOException {
+  void testExecuteSetToFalse() throws PebbleException, IOException {
 
     PebbleEngine pebble = new PebbleEngine.Builder().loader(new StringLoader())
         .newLineTrimming(false)

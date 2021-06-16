@@ -1,9 +1,7 @@
 ---
 ---
 
-Pebble is a Java templating engine inspired by <a href="https://twig.symfony.com/">Twig</a>.
-It features templates inheritance and easy-to-read syntax, ships with built-in <br/>autoescaping 
-for security, and includes integrated support for internationalization.
+Pebble is a Java templating engine inspired by <a href="https://twig.symfony.com/">Twig</a> and similar to the Python [Jinja Template Engine](https://palletsprojects.com/p/jinja/) syntax. It features templates inheritance and easy-to-read syntax, ships with built-in autoescaping for security, and includes integrated support for internationalization.
 
 ## Features
 
@@ -90,4 +88,5 @@ The output should result in the following:
 ```
 
 For more information on installation and configuration, see {{ anchor('the installation guide', 'Installation and Configuration') }}.<br/>
-For more information on basic usage, see {{ anchor('the basic usage guide', 'Basic Usage') }}.
+For more information on basic usage, see {{ anchor('the basic usage guide', 'Basic Usage') }}.<br/>
+For Spring Boot integration, see {{ anchor('the Spring Boot integration guide', 'Spring Boot Integration') }}.
