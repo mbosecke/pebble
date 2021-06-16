@@ -9,7 +9,9 @@
 package com.mitchellbosecke.pebble.utils;
 
 import com.mitchellbosecke.pebble.extension.escaper.SafeString;
+
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.util.Collection;
 import java.util.List;
@@ -171,8 +173,7 @@ public class OperatorUtils {
     return integerOperation(num1.intValue(), num2.intValue(), operation);
   }
 
-  private static boolean wideningConversionBinaryComparison(Object op1, Object op2,
-      Comparison comparison) {
+  private static boolean wideningConversionBinaryComparison(Object op1, Object op2, Comparison comparison) {
     if (op1 == null || op2 == null) {
       return false;
     }
@@ -187,6 +188,45 @@ public class OperatorUtils {
           String
               .format("invalid operands for mathematical comparison [%s]", comparison.toString()));
     }
+
+    // If both operands are comparable and of the same numeric type.
+    if (op1.getClass().equals(op2.getClass())) {
+    	boolean useComparableResult = false;
+    	int result = 0;
+
+    	if (op1 instanceof Integer) {
+    		result = ((Integer) op1).compareTo((Integer) op2);
+		} else if (op1 instanceof Double) {
+			result = ((Double) op1).compareTo((Double) op2);
+			useComparableResult = true;
+		} else if (op1 instanceof Long) {
+			result = ((Long) op1).compareTo((Long) op2);
+			useComparableResult = true;
+		} else if (op1 instanceof BigDecimal) {
+			result = ((BigDecimal) op1).compareTo((BigDecimal) op2);
+			useComparableResult = true;
+		} else if (op1 instanceof BigInteger) {
+			result = ((BigInteger) op1).compareTo((BigInteger) op2);
+			useComparableResult = true;
+		}
+
+    	if (useComparableResult) {
+			switch (comparison) {
+				case GREATER_THAN:
+					return result == 1;
+				case GREATER_THAN_EQUALS:
+					return result >= 0;
+				case LESS_THAN:
+					return result < 0;
+				case LESS_THAN_EQUALS:
+					return result <= 0;
+				case EQUALS:
+					return result == 0;
+				default:
+					throw new RuntimeException("Bug in OperatorUtils in pebble library");
+			}
+		}
+	}
 
     return doubleComparison(num1.doubleValue(), num2.doubleValue(), comparison);
   }
